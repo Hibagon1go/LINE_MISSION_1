@@ -2,7 +2,9 @@ from sys import stdin
 import datetime
 import sys
 
-log = [] #走行ログを格納
+#=========まず, 入力を受け取る=========#
+
+log = [] #走行ログを格納する配列
 
 def receive_input(): #入力受け取り関数
     try:
@@ -22,6 +24,7 @@ while 1:
     else:
         log.append(s.split()) #入力が存在したら受け取って走行ログに追加
 
+#=========運賃を計算するための準備をしてくれる関数を定義=========#
 
 def func(log_1,log_2): #二つの走行ログから, (深夜割増が適用されるか,低速か,(走行時間<-低速の場合のみ))を返す関数
     try:
@@ -51,6 +54,7 @@ def func(log_1,log_2): #二つの走行ログから, (深夜割増が適用さ�
                 return (0,0)
             else: #低速なら
                 return (0,1,run_seconds)
+    
         else: #夜に乗車して夜に降車
             if ave_v > 10: #低速でないなら
                 return (1,0)
@@ -70,6 +74,8 @@ def func(log_1,log_2): #二つの走行ログから, (深夜割増が適用さ�
     except Exception as e:
         print(e)
         sys.exit()
+
+#=========ここから実際に運賃を計算=========#
 
 fare = 0 #運賃を初期化
 distance = 0 #総走行距離を初期化
