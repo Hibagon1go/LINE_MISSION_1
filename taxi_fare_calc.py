@@ -8,25 +8,33 @@ log = [] #走行ログを格納する配列
 
 try:
     lines = sys.stdin.readlines()
-except IOError as e:
+except IOError as e: #I/Oエラーの場合の例外処理
     print("catch IOError:", e)
     sys.exit()
-except Exception as e:
+except Exception as e: #その他のエラーの場合の例外処理
     print(e)
     sys.exit()
 
-for i in range(len(lines)-1):
+
+for i in range(len(lines)):
+
     if not lines[i].rstrip(): #空行がある場合の例外処理
         raise Exception("空行があります.")
 
+    #<LF>, :, .を取り除く前処理       
     t = lines[i].rstrip()
     t = t.replace('<LF>','')
     t = t.replace(':',' ')
     t = t.replace('.',' ',1)
-    log.append(t.split()) #走行ログに追加
 
-if log[0][4] != '0.0': #ログの初期距離が0でない場合の例外処理
-    raise Exception("初期距離が0ではありません.")
+    if len(t.split()) != 5: #ログの形式が異常な場合の例外処理
+        raise Exception("ログの形式が異常です.")
+
+    log.append(t.split()) #走行ログ配列にログを追加
+
+
+if log[0][4] != '0.0': #ログの初期距離が0.0と書かれていない場合の例外処理
+    raise Exception("初期距離が0.0となっていません.")
 
 if len(log) < 2: #ログが2行未満の場合の例外処理
     raise Exception("ログが2行未満しかありません.")
@@ -35,7 +43,7 @@ if len(log) < 2: #ログが2行未満の場合の例外処理
 
 def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適用されるか,低速か,(走行時間<-低速の場合のみ)) のタプルを返す関数
     try:
-        #以下13行, ログの情報を変数に格納
+        #以下13行, ログの情報を変数に格納(ただし右詰めゼロ埋め)
         Hour_1 = int(log_1[0].zfill(2))
         Hour_2 = int(log_2[0].zfill(2))
         day_1 = Hour_1//24
@@ -59,10 +67,10 @@ def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適�
         if microsecond_1 > 999 or microsecond_2 > 999: #ログのmicrosecond部分が1000以上の場合の例外処理
             raise Exception('ログのmicrosecond部分が1000以上になっています.')        
 
-        #ログをdatetime型に変換
+        #ログの情報をdatetime型に変換
         time_1 = datetime.datetime(year=1, month=1, day=1+day_1, hour=hour_1, minute=minute_1, second=second_1, microsecond=microsecond_1)
         time_2 = datetime.datetime(year=1, month=1, day=1+day_2, hour=hour_2, minute=minute_2, second=second_2, microsecond=microsecond_2)
-
+        
         if time_1 >= time_2: #時系列がおかしい場合の例外処理
             raise Exception('ログの時系列が正しくありません.')
 
@@ -74,27 +82,27 @@ def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適�
         am_5_2 = datetime.datetime(year=1, month=1, day=time_2.day, hour=5) #ログ2の日の5時
         pm_22_2 = datetime.datetime(year=1, month=1, day=time_2.day, hour=22) #ログ2の日の22時
         
-        if am_5_1 <= time_1 < pm_22_1 or am_5_2 <= time_2 < pm_22_2: #ログ1またはログ2の記録が昼間 
+        if am_5_1 <= time_1 < pm_22_1 or am_5_2 <= time_2 < pm_22_2: #ログ1またはログ2の記録が昼間なら
             if ave_v > 10: #低速でないなら
                 return (0,0)
             else: #低速なら
                 return (0,1,run_seconds)
     
-        else: #ログ1の記録もログ2の記録も夜間(この場合に夜間割増発生)
+        else: #ログ1の記録もログ2の記録も夜間なら(この場合に夜間割増発生)
             if ave_v > 10: #低速でないなら
                 return (1,0)
             else: #低速なら
                 return (1,1,run_seconds)
     
-    except TypeError as e:
+    except TypeError as e: #TypeErrorの場合の例外処理
         print('catch TypeError:', e)
         sys.exit()
     
-    except ValueError as e:
+    except ValueError as e: #ValueErrorの場合の例外処理
         print('catch ValueError:', e)
         sys.exit()
 
-    except Exception as e:
+    except Exception as e: #その他のエラーの場合の例外処理
         print(e)
         sys.exit()
 
@@ -109,17 +117,17 @@ for i in range(len(log)-1): #次々と走行ログを取得して処理
     cond = func(log_1,log_2)
     distance = float(log_2[4]) 
     
-    if cond[0]: #ログ1の記録もログ2の記録も夜間
+    if cond[0]: #ログ1の記録もログ2の記録も夜間なら
         total_distance += distance*1.25 #走行距離を加算(夜間補正1.25倍)
         if cond[1]: #低速なら
             fare += (int(cond[2]*1.25)//90)*80 #低速運賃を上乗せ(夜間補正1.25倍)
 
-    else:
+    else: #ログ1またはログ2の記録が昼間なら
         total_distance += distance #走行距離を加算
         if cond[1]: #低速なら
             fare += (int(cond[2])//90)*80 #低速運賃を上乗せ
 
-if total_distance == 0.0:
+if total_distance == 0.0: #総走行距離が0.0mの場合の例外処理
     raise Exception("総走行距離が0mです.")
 
 fare += 410 + int(max(0,total_distance-1052)//237)*80 #初乗運賃 + 総走行距離に応じた加算運賃
