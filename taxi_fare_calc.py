@@ -17,7 +17,6 @@ except Exception as e: #その他のエラーの場合の例外処理
 
 
 for i in range(len(lines)):
-
     if not lines[i].rstrip(): #空行がある場合の例外処理
         raise Exception("空行があります.")
 
@@ -52,10 +51,10 @@ def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適�
         hour_2 = Hour_2%24
         minute_1 = int(log_1[1].zfill(2))
         minute_2 = int(log_2[1].zfill(2))
-        second_1=int(log_1[2].zfill(2))
-        second_2=int(log_2[2].zfill(2))
-        microsecond_1=int(log_1[3].zfill(3))
-        microsecond_2=int(log_2[3].zfill(3))
+        second_1 = int(log_1[2].zfill(2))
+        second_2 = int(log_2[2].zfill(2))
+        microsecond_1 = int(log_1[3].zfill(3))
+        microsecond_2 = int(log_2[3].zfill(3))
         distance = float(log_2[4])
 
         if distance < 0 or distance > 100: #走行距離が負or10000以上の場合の例外処理
