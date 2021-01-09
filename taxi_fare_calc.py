@@ -110,6 +110,7 @@ def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適�
 
 fare = 0 #運賃を初期化
 total_distance = 0 #総走行距離を初期化
+low_speed_runtime = 0 #総低速走行時間を初期化
 
 for i in range(len(log)-1): #次々と走行ログを取得して処理
     log_1 = log[i]
@@ -120,17 +121,17 @@ for i in range(len(log)-1): #次々と走行ログを取得して処理
     if cond[0]: #ログ1の記録もログ2の記録も夜間なら
         total_distance += distance*1.25 #走行距離を加算(夜間補正1.25倍)
         if cond[1]: #低速なら
-            fare += (int(cond[2]*1.25)//90)*80 #低速運賃を上乗せ(夜間補正1.25倍)
+            low_speed_runtime += cond[2]*1.25 #低速走行時間を加算(夜間補正1.25倍)
 
     else: #ログ1またはログ2の記録が昼間なら
         total_distance += distance #走行距離を加算
         if cond[1]: #低速なら
-            fare += (int(cond[2])//90)*80 #低速運賃を上乗せ
+            low_speed_runtime += cond[2] #低速走行時間を加算
 
 if total_distance == 0.0: #総走行距離が0.0mの場合の例外処理
     raise Exception("総走行距離が0mです.")
 
-fare += 410 + int(max(0,total_distance-1052)//237)*80 #初乗運賃 + 総走行距離に応じた加算運賃
+fare += 410 + int(max(0,total_distance-1052)//237)*80 + int(low_speed_runtime//90)*80 #初乗運賃 + 総走行距離に応じた加算運賃 + 総低速走行時間に応じた加算運賃
 
 print(fare) #運賃を出力
 
