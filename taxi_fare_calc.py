@@ -2,45 +2,53 @@ from sys import stdin
 import datetime
 import sys
 
-#=========まず, 入力を受け取る=========#
 
-log = [] #走行ログを格納する配列
+def receive_input(): #入力受取り関数
+    try:
+        lines = sys.stdin.readlines()
+        if len(lines) < 2: #ログが2行未満の場合の例外処理
+            raise Exception("ログが2行未満しかありません.")
 
-try:
-    lines = sys.stdin.readlines()
-except IOError as e: #I/Oエラーの場合の例外処理
-    print("catch IOError:", e)
-    sys.exit()
-except Exception as e: #その他のエラーの場合の例外処理
-    print(e)
-    sys.exit()
+        return lines
 
+    except IOError as e: #I/Oエラーの場合の例外処理
+        print("catch IOError:", e)
+        sys.exit()
 
-for i in range(len(lines)):
-    if not lines[i].rstrip(): #空行がある場合の例外処理
-        raise Exception("空行があります.")
-
-    #<LF>, :, .を取り除く前処理       
-    t = lines[i].rstrip()
-    t = t.replace('<LF>','')
-    t = t.replace(':',' ')
-    t = t.replace('.',' ',1)
-
-    if len(t.split()) != 5: #ログの形式が異常な場合の例外処理
-        raise Exception("ログの形式が異常です.")
-
-    log.append(t.split()) #走行ログ配列にログを追加
+    except Exception as e: #その他のエラーの場合の例外処理
+        print(e)
+        sys.exit()
 
 
-if log[0][4] != '0.0': #ログの初期距離が0.0と書かれていない場合の例外処理
-    raise Exception("初期距離が0.0となっていません.")
+def create_log(lines): #ログ作成関数
 
-if len(log) < 2: #ログが2行未満の場合の例外処理
-    raise Exception("ログが2行未満しかありません.")
+    log = [] #走行ログを格納する配列
+
+    for i in range(len(lines)):
+        if not lines[i].rstrip(): #空行がある場合の例外処理
+            raise Exception("空行があります.")
+        
+        #<LF>, :, .を取り除く前処理       
+        t = lines[i].rstrip()
+        t = t.replace('<LF>','')
+        t = t.replace(':',' ')
+        t = t.replace('.',' ',1)
+
+        if len(t.split()) != 5: #ログの形式が異常な場合の例外処理
+            raise Exception("ログの形式が異常です.")
+
+        log.append(t.split()) #走行ログ配列にログを追加
+    
+        if i == 0:
+            if log[0][4] != '0.0': #ログの初期距離が0.0と書かれていない場合の例外処理
+                raise Exception("初期距離が0.0となっていません.")
+
+    return log
+
 
 #=========運賃を計算するための準備をしてくれる関数を定義=========#
 
-def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適用されるか,低速か,(走行時間<-低速の場合のみ)) のタプルを返す関数
+def log_info(log_1,log_2): #二つの走行ログを引数に, (ログ1の時刻, ログ2の時刻, 走行時間, 平均走行速度)を返す関数
     try:
         #以下13行, ログの情報を変数に格納(ただし右詰めゼロ埋め)
         Hour_1 = int(log_1[0].zfill(2))
@@ -75,23 +83,8 @@ def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適�
 
         run_seconds = (time_2-time_1).total_seconds() #二つの走行ログに記録されている時間の差を, second単位に直す
         ave_v = (distance/run_seconds)*3.6 #二つの走行ログ間の平均時速(km/h)
-        
-        am_5_1 = datetime.datetime(year=1, month=1, day=time_1.day, hour=5) #ログ1の日の5時
-        pm_22_1 = datetime.datetime(year=1, month=1, day=time_1.day, hour=22) #ログ1の日の22時
-        am_5_2 = datetime.datetime(year=1, month=1, day=time_2.day, hour=5) #ログ2の日の5時
-        pm_22_2 = datetime.datetime(year=1, month=1, day=time_2.day, hour=22) #ログ2の日の22時
-        
-        if am_5_1 <= time_1 < pm_22_1 or am_5_2 <= time_2 < pm_22_2: #ログ1またはログ2の記録が昼間なら
-            if ave_v > 10: #低速でないなら
-                return (0,0)
-            else: #低速なら
-                return (0,1,run_seconds)
     
-        else: #ログ1の記録もログ2の記録も夜間なら(この場合に夜間割増発生)
-            if ave_v > 10: #低速でないなら
-                return (1,0)
-            else: #低速なら
-                return (1,1,run_seconds)
+        return (time_1, time_2, run_seconds, ave_v)
     
     except TypeError as e: #TypeErrorの場合の例外処理
         print('catch TypeError:', e)
@@ -105,27 +98,55 @@ def func(log_1,log_2): #二つの走行ログを引数に, (深夜割増が適�
         print(e)
         sys.exit()
 
+
+def judge_night(time_1, time_2): #夜間かどうかを判定する関数
+    am_5_1 = datetime.datetime(year=1, month=1, day=time_1.day, hour=5) #ログ1の日の5時
+    pm_22_1 = datetime.datetime(year=1, month=1, day=time_1.day, hour=22) #ログ1の日の22時
+    am_5_2 = datetime.datetime(year=1, month=1, day=time_2.day, hour=5) #ログ2の日の5時
+    pm_22_2 = datetime.datetime(year=1, month=1, day=time_2.day, hour=22) #ログ2の日の22時
+
+    if am_5_1 <= time_1 < pm_22_1 or am_5_2 <= time_2 < pm_22_2: #ログ1またはログ2の記録が昼間なら
+        return 0
+    else: #ログ1の記録もログ2の記録も夜間なら
+        return 1
+
+def judge_lowspeed(run_seconds, ave_v): #低速かどうかを判定する関数
+    if ave_v > 10: #低速でないなら
+        return 0
+    else: #低速なら
+        return 1
+
+
 #=========ここから実際に運賃を計算=========#
 
 fare = 0 #運賃を初期化
 total_distance = 0 #総走行距離を初期化
 low_speed_runtime = 0 #総低速走行時間を初期化
 
+lines = receive_input() #入力受取り
+log = create_log(lines) #ログを作成
+
 for i in range(len(log)-1): #次々と走行ログを取得して処理
     log_1 = log[i]
     log_2 = log[i+1]
-    cond = func(log_1,log_2)
+    info = log_info(log_1, log_2)
+    time_1 = info[0]
+    time_2 = info[1]
+    run_seconds = info[2]
+    ave_v = info[3]
+    isNight = judge_night(time_1, time_2)
+    isLowspeed= judge_lowspeed(run_seconds, ave_v)
     distance = float(log_2[4]) 
     
-    if cond[0]: #ログ1の記録もログ2の記録も夜間なら
+    if isNight:
         total_distance += distance*1.25 #走行距離を加算(夜間補正1.25倍)
-        if cond[1]: #低速なら
-            low_speed_runtime += cond[2]*1.25 #低速走行時間を加算(夜間補正1.25倍)
+        if isLowspeed: #低速なら
+            low_speed_runtime += run_seconds*1.25 #低速走行時間を加算(夜間補正1.25倍)
 
     else: #ログ1またはログ2の記録が昼間なら
         total_distance += distance #走行距離を加算
-        if cond[1]: #低速なら
-            low_speed_runtime += cond[2] #低速走行時間を加算
+        if isLowspeed: #低速なら
+            low_speed_runtime += run_seconds #低速走行時間を加算
 
 if total_distance == 0.0: #総走行距離が0.0mの場合の例外処理
     raise Exception("総走行距離が0mです.")
