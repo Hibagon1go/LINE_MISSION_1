@@ -21,7 +21,6 @@ def receive_input(): #入力受取り関数
 
 
 def create_log(lines): #ログ作成関数
-
     log = [] #走行ログを格納する配列
 
     for i in range(len(lines)):
@@ -39,9 +38,8 @@ def create_log(lines): #ログ作成関数
 
         log.append(t.split()) #走行ログ配列にログを追加
     
-        if i == 0:
-            if log[0][4] != '0.0': #ログの初期距離が0.0と書かれていない場合の例外処理
-                raise Exception("初期距離が0.0となっていません.")
+    if log[0][4] != '0.0': #ログの初期距離が0.0と書かれていない場合の例外処理
+        raise Exception("初期距離が0.0となっていません.")
 
     return log
 
@@ -140,12 +138,12 @@ for i in range(len(log)-1): #次々と走行ログを取得して処理
     
     if isNight:
         total_distance += distance*1.25 #走行距離を加算(夜間補正1.25倍)
-        if isLowspeed: #低速なら
+        if isLowspeed: 
             low_speed_runtime += run_seconds*1.25 #低速走行時間を加算(夜間補正1.25倍)
 
-    else: #ログ1またはログ2の記録が昼間なら
+    else:
         total_distance += distance #走行距離を加算
-        if isLowspeed: #低速なら
+        if isLowspeed: 
             low_speed_runtime += run_seconds #低速走行時間を加算
 
 if total_distance == 0.0: #総走行距離が0.0mの場合の例外処理
